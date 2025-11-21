@@ -34,8 +34,8 @@ services:
       - bash
       - -c
       - |
-        set -e
-        envsubst < /home/kong/temp.yml > /home/kong/kong.yml
+        set -euf
+        eval "echo \"$(cat ~/temp.yml)\"" > ~/kong.yml
         exec /docker-entrypoint.sh kong docker-start
     ports:
       - ${KONG_HTTP_PORT}:8000/tcp
