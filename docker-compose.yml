@@ -259,23 +259,21 @@ services:
       LOGFLARE_SUPABASE_MODE: true
       LOGFLARE_MIN_CLUSTER_SIZE: 1
       RELEASE_COOKIE: cookie
-      # Disable Google Cloud features for self-hosted mode
       GOOGLE_PROJECT_ID: "self-hosted"
       GOOGLE_PROJECT_NUMBER: "0"
     volumes:
       - ./volumes/logs/gcloud.json:/opt/app/gcloud.json:ro
     ports:
       - 4000:4000
-    entrypoint: |
-      sh -c `cat <<'EOF' > run.sh && sh run.sh
-      # Create dummy gcloud.json if it doesn't exist
-      if [ ! -f /opt/app/gcloud.json ]; then
-        echo '{"type":"service_account","project_id":"self-hosted"}' > /opt/app/gcloud.json
-      fi
-      ./logflare eval Logflare.Release.migrate
-      ./logflare start --sname logflare
-      EOF
-      `
+    entrypoint:
+      - sh
+      - -c
+      - |
+        if [ ! -f /opt/app/gcloud.json ]; then
+          echo '{"type":"service_account","project_id":"self-hosted"}' > /opt/app/gcloud.json
+        fi
+        ./logflare eval Logflare.Release.migrate
+        ./logflare start --sname logflare
 
   db:
     container_name: supabase-db
