@@ -262,7 +262,7 @@ services:
       GOOGLE_PROJECT_ID: self-hosted
       GOOGLE_PROJECT_NUMBER: "0"
     volumes:
-      - ./volumes/logs/gcloud.json:/opt/app/rel/logflare/releases/1.4.0/gcloud.json:ro
+      - ./volumes/logs/gcloud.json:/opt/app/rel/logflare/bin/gcloud.json:ro
     ports:
       - 4000:4000
     command:
