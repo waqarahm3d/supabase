@@ -283,8 +283,8 @@ echo ""
 
 if [ -n "$STUDIO_DOMAIN" ]; then
     echo -e "${CYAN}Access Points:${NC}"
-    echo -e "  📊 Studio: ${GREEN}http://${STUDIO_DOMAIN}:8000${NC}"
-    echo -e "  🔌 API:    ${GREEN}http://${API_DOMAIN}:8000${NC}"
+    echo -e "  📊 Studio: ${GREEN}http://${STUDIO_DOMAIN}${NC}"
+    echo -e "  🔌 API:    ${GREEN}http://${API_DOMAIN}${NC}"
     echo ""
 fi
 

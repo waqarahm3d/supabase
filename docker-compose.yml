@@ -40,8 +40,8 @@ services:
             /home/kong/temp.yml > /home/kong/kong.yml
         exec /docker-entrypoint.sh kong docker-start
     ports:
-      - ${KONG_HTTP_PORT}:8000/tcp
-      - ${KONG_HTTPS_PORT}:8443/tcp
+      - "80:8000/tcp"
+      - "443:8443/tcp"
     depends_on:
       analytics:
         condition: service_started

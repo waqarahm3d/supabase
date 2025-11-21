@@ -125,8 +125,8 @@ Expected: All services should show "HEALTHY" or "RUNNING"
 
 ### Step 5: Access
 
-- **Studio Dashboard**: `http://studio.yourdomain.com:8000`
-- **API Endpoint**: `http://api.yourdomain.com:8000`
+- **Studio Dashboard**: `http://studio.yourdomain.com`
+- **API Endpoint**: `http://api.yourdomain.com`
 
 Login with credentials from deployment output.
 
@@ -398,7 +398,7 @@ This deployment incorporates fixes for these issues:
 After deployment, verify:
 
 - [ ] All 11 services are running (`./check-services.sh`)
-- [ ] Studio accessible at `http://studio.domain.com:8000`
+- [ ] Studio accessible at `http://studio.domain.com`
 - [ ] Can login to Studio dashboard
 - [ ] Database is accepting connections
 - [ ] Kong API gateway responding
