@@ -1,10 +1,9 @@
-version: '3.8'
 
 services:
   # Supabase Studio - Web UI for managing your database
   studio:
     container_name: supabase-studio
-    image: supabase/studio:20231123-64a766c
+    image: supabase/studio:latest
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/profile', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
@@ -60,7 +59,7 @@ services:
   # Auth - GoTrue authentication service
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:v2.132.3
+    image: supabase/gotrue:latest
     depends_on:
       db:
         condition: service_healthy
@@ -109,7 +108,7 @@ services:
   # REST API - PostgREST
   rest:
     container_name: supabase-rest
-    image: postgrest/postgrest:v11.2.2
+    image: postgrest/postgrest:latest
     depends_on:
       db:
         condition: service_healthy
@@ -129,7 +128,7 @@ services:
   # Realtime - Phoenix channels for real-time functionality
   realtime:
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.25.50
+    image: supabase/realtime:latest
     depends_on:
       db:
         condition: service_healthy
@@ -163,7 +162,7 @@ services:
   # Storage - S3-compatible object storage
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v0.43.11
+    image: supabase/storage-api:latest
     depends_on:
       db:
         condition: service_healthy
@@ -197,7 +196,7 @@ services:
   # Image Proxy - Image transformations
   imgproxy:
     container_name: supabase-imgproxy
-    image: darthsim/imgproxy:v3.8.0
+    image: darthsim/imgproxy:latest
     healthcheck:
       test: ["CMD", "imgproxy", "health"]
       timeout: 5s
@@ -214,7 +213,7 @@ services:
   # Meta - PostgreSQL metadata API
   meta:
     container_name: supabase-meta
-    image: supabase/postgres-meta:v0.68.0
+    image: supabase/postgres-meta:latest
     depends_on:
       db:
         condition: service_healthy
@@ -232,7 +231,7 @@ services:
   # Functions - Edge Functions runtime
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:v1.22.4
+    image: supabase/edge-runtime:latest
     restart: unless-stopped
     depends_on:
       analytics:
@@ -254,7 +253,7 @@ services:
   # Analytics - Logflare for logging and analytics
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:1.4.0
+    image: supabase/logflare:latest
     healthcheck:
       test: ["CMD", "curl", "http://localhost:4000/health"]
       timeout: 5s
@@ -289,7 +288,7 @@ services:
   # Database - PostgreSQL with Supabase extensions
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.1.0.147
+    image: supabase/postgres:latest
     healthcheck:
       test: pg_isready -U postgres -h localhost
       interval: 5s
@@ -329,7 +328,7 @@ services:
   # Vector - pgvector for embeddings
   vector:
     container_name: supabase-vector
-    image: timberio/vector:0.28.1-alpine
+    image: timberio/vector:latest-alpine
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9001/health"]
       timeout: 5s
