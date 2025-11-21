@@ -610,8 +610,47 @@ clone_supabase_repo() {
     # Shallow clone for faster setup
     git clone --depth 1 "$DEFAULT_REPO_URL" "$PROJECT_DIR/supabase-repo" >> "$LOG_FILE" 2>&1
 
-    # Copy docker directory to project dir
-    cp -r "$PROJECT_DIR/supabase-repo/docker/"* "$PROJECT_DIR/"
+    # Copy docker directory to project dir (including hidden files like .env.example)
+    cp -r "$PROJECT_DIR/supabase-repo/docker/"* "$PROJECT_DIR/" 2>/dev/null || true
+    cp -r "$PROJECT_DIR/supabase-repo/docker/".* "$PROJECT_DIR/" 2>/dev/null || true
+
+    # Ensure .env.example exists
+    if [[ ! -f "$PROJECT_DIR/.env.example" ]]; then
+        log_warn ".env.example not found in docker directory, creating template..."
+        # Create a basic .env.example if it doesn't exist
+        cat > "$PROJECT_DIR/.env.example" << 'EOF'
+# PostgreSQL
+POSTGRES_PASSWORD=your-super-secret-and-long-postgres-password
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+POSTGRES_DB=postgres
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-token-with-at-least-32-characters-long
+ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
+
+# API
+API_EXTERNAL_URL=http://localhost:8000
+SITE_URL=http://localhost:3000
+
+# Dashboard
+DASHBOARD_USERNAME=supabase
+DASHBOARD_PASSWORD=this_password_is_insecure_and_should_be_updated
+
+# Database
+POSTGRES_USER=postgres
+
+# Studio
+STUDIO_DEFAULT_ORGANIZATION=Default Organization
+STUDIO_DEFAULT_PROJECT=Default Project
+STUDIO_PORT=3000
+
+# Ports
+KONG_HTTP_PORT=8000
+KONG_HTTPS_PORT=8443
+EOF
+    fi
 
     # Clean up repo clone
     rm -rf "$PROJECT_DIR/supabase-repo"
