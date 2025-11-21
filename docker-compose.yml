@@ -136,6 +136,7 @@ services:
       retries: 3
     restart: unless-stopped
     environment:
+      APP_NAME: realtime-dev
       PORT: 4000
       DB_HOST: ${POSTGRES_HOST}
       DB_PORT: ${POSTGRES_PORT}
