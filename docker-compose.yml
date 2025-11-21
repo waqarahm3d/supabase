@@ -34,7 +34,7 @@ services:
       - bash
       - -c
       - |
-        set -euf
+        set -ef
         eval "echo \"$(cat ~/temp.yml)\"" > ~/kong.yml
         exec /docker-entrypoint.sh kong docker-start
     ports:
