@@ -19,11 +19,21 @@ echo -e "${BLUE}   Supabase Services Health Check${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo ""
 
-# Load environment variables
+# Load environment variables safely
 if [ -f .env ]; then
-    set -a
-    source .env
-    set +a
+    while IFS= read -r line; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        # Skip lines that don't contain =
+        [[ ! "$line" =~ = ]] && continue
+        # Extract key and value
+        key="${line%%=*}"
+        value="${line#*=}"
+        # Trim whitespace from key
+        key=$(echo "$key" | xargs)
+        # Export the variable (keeping value as-is to preserve special characters)
+        export "$key=$value"
+    done < .env
 else
     echo -e "${RED}Error: .env file not found${NC}"
     exit 1
