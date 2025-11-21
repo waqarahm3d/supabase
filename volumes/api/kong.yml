@@ -60,7 +60,6 @@ services:
 
   ## Secure Auth routes
   - name: auth-v1
-    _comment: "GoTrue: /auth/v1/* -> http://auth:9999/*"
     url: http://auth:9999/
     routes:
       - name: auth-v1-all
@@ -75,7 +74,6 @@ services:
 
   ## Secure REST routes
   - name: rest-v1
-    _comment: "PostgREST: /rest/v1/* -> http://rest:3000/*"
     url: http://rest:3000/
     routes:
       - name: rest-v1-all
@@ -90,7 +88,6 @@ services:
 
   ## GraphQL routes
   - name: graphql-v1
-    _comment: "PostgREST: /graphql/v1/* -> http://rest:3000/rpc/graphql"
     url: http://rest:3000/rpc/graphql
     routes:
       - name: graphql-v1-all
@@ -105,7 +102,6 @@ services:
 
   ## Realtime routes
   - name: realtime-v1
-    _comment: "Realtime: /realtime/v1/* -> ws://realtime:4000/socket/*"
     url: http://realtime-dev.supabase-realtime:4000/socket
     routes:
       - name: realtime-v1-all
@@ -120,7 +116,6 @@ services:
 
   ## Storage routes: the storage server manages its own auth
   - name: storage-v1
-    _comment: "Storage: /storage/v1/* -> http://storage:5000/*"
     url: http://storage:5000/
     routes:
       - name: storage-v1-all
@@ -132,7 +127,6 @@ services:
 
   ## Edge Functions routes
   - name: functions-v1
-    _comment: "Edge Functions: /functions/v1/* -> http://functions:9000/*"
     url: http://functions:9000/
     routes:
       - name: functions-v1-all
@@ -144,7 +138,6 @@ services:
 
   ## Analytics routes
   - name: analytics-v1
-    _comment: "Analytics: /analytics/v1/* -> http://logflare:4000/*"
     url: http://analytics:4000/
     routes:
       - name: analytics-v1-all
