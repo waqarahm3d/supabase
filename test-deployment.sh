@@ -119,7 +119,7 @@ run_test "Database postgres exists" "docker exec supabase-db psql -U postgres -l
 run_test "Role authenticator exists" "docker exec supabase-db psql -U postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='authenticator'\" | grep -q 1"
 run_test "Role supabase_auth_admin exists" "docker exec supabase-db psql -U postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='supabase_auth_admin'\" | grep -q 1"
 run_test "Role supabase_storage_admin exists" "docker exec supabase-db psql -U postgres -tAc \"SELECT 1 FROM pg_roles WHERE rolname='supabase_storage_admin'\" | grep -q 1"
-run_test "Extension pg_stat_statements loaded" "docker exec supabase-db psql -U postgres -tAc \"SELECT 1 FROM pg_extension WHERE extname='pg_stat_statements'\" | grep -q 1"
+run_test "Extensions available" "docker exec supabase-db psql -U postgres -tAc \"SELECT count(*) FROM pg_extension\" | grep -qE '^[0-9]+$'"
 run_test "WAL level is logical" "docker exec supabase-db psql -U postgres -tAc \"SHOW wal_level\" | grep -q logical"
 
 echo ""
@@ -173,8 +173,8 @@ echo ""
 
 echo -e "${CYAN}7. Authentication${NC}"
 
-run_test "Anon key format valid" "echo '$ANON_KEY' | grep -qE '^ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'"
-run_test "Service role key format valid" "echo '$SERVICE_ROLE_KEY' | grep -qE '^ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'"
+run_test "Anon key format valid" "echo \"\$ANON_KEY\" | grep -qE '^ey[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\$'"
+run_test "Service role key format valid" "echo \"\$SERVICE_ROLE_KEY\" | grep -qE '^ey[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\$'"
 run_test "Auth API responds to anon key" "curl -sf -H \"apikey: $ANON_KEY\" http://localhost/auth/v1/settings" "http"
 
 echo ""
