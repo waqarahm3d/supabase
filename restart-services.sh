@@ -51,7 +51,7 @@ check_container "realtime-dev.supabase-realtime"
 check_container "supabase-storage"
 check_container "supabase-studio"
 check_container "supabase-analytics"
-check_container "supabase-functions"
+check_container "supabase-edge-functions"
 check_container "supabase-imgproxy"
 check_container "supabase-meta"
 

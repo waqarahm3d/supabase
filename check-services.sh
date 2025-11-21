@@ -109,8 +109,8 @@ echo -e "${CYAN}Optional Services:${NC}"
 check_service "Analytics (Logflare)" "supabase-analytics" \
     "curl -sf http://localhost:4000/health"
 
-check_service "Functions (Deno)" "supabase-functions" \
-    "docker logs supabase-functions 2>&1 | grep -q 'listening on'"
+check_service "Functions (Deno)" "supabase-edge-functions" \
+    "docker logs supabase-edge-functions 2>&1 | grep -q 'listening on'"
 
 check_service "ImgProxy" "supabase-imgproxy" \
     "docker logs supabase-imgproxy 2>&1 | grep -q 'Started'"
