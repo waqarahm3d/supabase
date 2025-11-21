@@ -103,6 +103,38 @@ mkdir -p volumes/db volumes/storage volumes/logs volumes/api
 echo -e "${GREEN}✓ Fresh volumes directory created${NC}"
 
 echo ""
+echo "Creating required config files..."
+
+# Create postgresql.conf as a FILE (not directory) to prevent mount errors
+cat > volumes/db/postgresql.conf << 'PGCONF'
+# PostgreSQL configuration file for Supabase
+listen_addresses = '*'
+max_connections = 100
+shared_buffers = 128MB
+dynamic_shared_memory_type = posix
+max_wal_size = 1GB
+min_wal_size = 80MB
+log_timezone = 'UTC'
+datestyle = 'iso, mdy'
+timezone = 'UTC'
+lc_messages = 'en_US.utf8'
+lc_monetary = 'en_US.utf8'
+lc_numeric = 'en_US.utf8'
+lc_time = 'en_US.utf8'
+default_text_search_config = 'pg_catalog.english'
+PGCONF
+
+echo -e "${GREEN}✓ Created postgresql.conf${NC}"
+
+# Verify it's a file
+if [ -f "volumes/db/postgresql.conf" ]; then
+    echo -e "${GREEN}✓ Verified postgresql.conf is a file (not directory)${NC}"
+else
+    echo -e "${RED}✗ ERROR: postgresql.conf was not created properly${NC}"
+    exit 1
+fi
+
+echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${BLUE}   Step 2/6: Generate Fresh Credentials${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
