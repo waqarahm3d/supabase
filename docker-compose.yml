@@ -1,9 +1,8 @@
 
 services:
-  # Supabase Studio - Web UI for managing your database
   studio:
     container_name: supabase-studio
-    image: supabase/studio:latest
+    image: supabase/studio:20240729-ce42139
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/profile', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
@@ -16,21 +15,17 @@ services:
     environment:
       STUDIO_PG_META_URL: http://meta:8080
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
       DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION}
       DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT}
-
       SUPABASE_URL: https://${API_DOMAIN}
       SUPABASE_PUBLIC_URL: https://${API_DOMAIN}
       SUPABASE_ANON_KEY: ${ANON_KEY}
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
-
       LOGFLARE_API_KEY: ${LOGFLARE_API_KEY}
       LOGFLARE_URL: http://analytics:4000
       NEXT_PUBLIC_ENABLE_LOGS: true
       NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
 
-  # Kong API Gateway - Routes requests to appropriate services
   kong:
     container_name: supabase-kong
     image: kong:2.8.1
@@ -56,10 +51,9 @@ services:
     volumes:
       - ./volumes/api/kong.yml:/home/kong/temp.yml:ro
 
-  # Auth - GoTrue authentication service
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:latest
+    image: supabase/gotrue:v2.158.1
     depends_on:
       db:
         condition: service_healthy
@@ -75,20 +69,16 @@ services:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
       API_EXTERNAL_URL: https://${API_DOMAIN}
-
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
-
       GOTRUE_SITE_URL: ${SITE_URL}
       GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
       GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
-
       GOTRUE_JWT_ADMIN_ROLES: service_role
       GOTRUE_JWT_AUD: authenticated
       GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
       GOTRUE_JWT_EXP: ${JWT_EXPIRY}
       GOTRUE_JWT_SECRET: ${JWT_SECRET}
-
       GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP}
       GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM}
       GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
@@ -101,14 +91,12 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
-
       GOTRUE_EXTERNAL_PHONE_ENABLED: ${ENABLE_PHONE_SIGNUP}
       GOTRUE_SMS_AUTOCONFIRM: ${ENABLE_PHONE_AUTOCONFIRM}
 
-  # REST API - PostgREST
   rest:
     container_name: supabase-rest
-    image: postgrest/postgrest:latest
+    image: postgrest/postgrest:v12.2.3
     depends_on:
       db:
         condition: service_healthy
@@ -125,10 +113,9 @@ services:
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY}
     command: "postgrest"
 
-  # Realtime - Phoenix channels for real-time functionality
   realtime:
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:latest
+    image: supabase/realtime:v2.30.23
     depends_on:
       db:
         condition: service_healthy
@@ -159,10 +146,9 @@ services:
     command: >
       sh -c "/app/bin/migrate && /app/bin/realtime eval 'Realtime.Release.seeds(Realtime.Repo)' && /app/bin/server"
 
-  # Storage - S3-compatible object storage
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:latest
+    image: supabase/storage-api:v1.10.2
     depends_on:
       db:
         condition: service_healthy
@@ -193,10 +179,9 @@ services:
     volumes:
       - ./volumes/storage:/var/lib/storage:z
 
-  # Image Proxy - Image transformations
   imgproxy:
     container_name: supabase-imgproxy
-    image: darthsim/imgproxy:latest
+    image: darthsim/imgproxy:v3.8.0
     healthcheck:
       test: ["CMD", "imgproxy", "health"]
       timeout: 5s
@@ -210,10 +195,9 @@ services:
     volumes:
       - ./volumes/storage:/var/lib/storage:z
 
-  # Meta - PostgreSQL metadata API
   meta:
     container_name: supabase-meta
-    image: supabase/postgres-meta:latest
+    image: supabase/postgres-meta:v0.84.0
     depends_on:
       db:
         condition: service_healthy
@@ -228,10 +212,9 @@ services:
       PG_META_DB_USER: supabase_admin
       PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD}
 
-  # Functions - Edge Functions runtime
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:latest
+    image: supabase/edge-runtime:v1.55.2
     restart: unless-stopped
     depends_on:
       analytics:
@@ -250,10 +233,9 @@ services:
       - --main-service
       - /home/deno/functions/main
 
-  # Analytics - Logflare for logging and analytics
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:latest
+    image: supabase/logflare:1.4.0
     healthcheck:
       test: ["CMD", "curl", "http://localhost:4000/health"]
       timeout: 5s
@@ -285,10 +267,9 @@ services:
       EOF
       `
 
-  # Database - PostgreSQL with Supabase extensions
   db:
     container_name: supabase-db
-    image: supabase/postgres:latest
+    image: supabase/postgres:15.6.1.117
     healthcheck:
       test: pg_isready -U postgres -h localhost
       interval: 5s
@@ -325,10 +306,9 @@ services:
       - ./volumes/db/data:/var/lib/postgresql/data:Z
       - ./volumes/db/postgresql.conf:/etc/postgresql/postgresql.conf
 
-  # Vector - pgvector for embeddings
   vector:
     container_name: supabase-vector
-    image: timberio/vector:latest-alpine
+    image: timberio/vector:0.28.1-alpine
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9001/health"]
       timeout: 5s
