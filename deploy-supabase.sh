@@ -54,10 +54,21 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Source the .env file
-set -a
-source .env
-set +a
+# Source the .env file safely
+# Read each line and export variables properly
+while IFS= read -r line; do
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    # Skip lines that don't contain =
+    [[ ! "$line" =~ = ]] && continue
+    # Extract key and value
+    key="${line%%=*}"
+    value="${line#*=}"
+    # Trim whitespace from key
+    key=$(echo "$key" | xargs)
+    # Export the variable (keeping value as-is to preserve special characters)
+    export "$key=$value"
+done < .env
 
 # Verify critical environment variables
 REQUIRED_VARS=("API_DOMAIN" "STUDIO_DOMAIN" "POSTGRES_PASSWORD" "JWT_SECRET" "ANON_KEY" "SERVICE_ROLE_KEY" "DASHBOARD_PASSWORD")
