@@ -272,10 +272,23 @@ EOF
     read -p "Restart SSH now? (y/N): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        systemctl restart sshd
+        # Detect SSH service name (Ubuntu uses 'ssh', some systems use 'sshd')
+        if systemctl list-units --full --all | grep -q "ssh.service"; then
+            SSH_SERVICE="ssh"
+        else
+            SSH_SERVICE="sshd"
+        fi
+
+        systemctl restart $SSH_SERVICE
         success "SSH hardened and restarted"
     else
-        warning "SSH not restarted. Run 'systemctl restart sshd' manually after verifying key access."
+        # Detect SSH service name for the message
+        if systemctl list-units --full --all | grep -q "ssh.service"; then
+            SSH_SERVICE="ssh"
+        else
+            SSH_SERVICE="sshd"
+        fi
+        warning "SSH not restarted. Run 'systemctl restart $SSH_SERVICE' manually after verifying key access."
     fi
 }
 
