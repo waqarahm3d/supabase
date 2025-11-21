@@ -485,7 +485,14 @@ harden_ssh() {
     # Validate SSH config
     if sshd -t; then
         log_success "SSH configuration is valid"
-        systemctl restart sshd
+
+        # Determine SSH service name (Ubuntu uses 'ssh', some systems use 'sshd')
+        local ssh_service="ssh"
+        if systemctl list-units --type=service | grep -q "sshd.service"; then
+            ssh_service="sshd"
+        fi
+
+        systemctl restart "$ssh_service"
         log_success "SSH hardening completed and service restarted"
     else
         log_error "Invalid SSH configuration. Restoring backup..."
