@@ -50,12 +50,28 @@ if ! command -v docker &> /dev/null; then
 fi
 
 ################################################################################
-# STEP 1: Stop everything
+# STEP 1: Stop everything and clean corrupted volumes
 ################################################################################
-log_section "Step 1: Stopping All Services"
+log_section "Step 1: Complete Cleanup - Removing Corrupted Data"
 
-docker compose down
+docker compose down -v --remove-orphans
 log "${GREEN}✓ All services stopped${NC}"
+
+# NUCLEAR OPTION: Remove all volumes - they're corrupted
+log "${YELLOW}Removing all volume data (corrupted state detected)...${NC}"
+rm -rf volumes/db/*
+rm -rf volumes/storage/*
+rm -rf volumes/logs/*
+rm -rf volumes/functions/*
+log "${GREEN}✓ Corrupted volumes removed${NC}"
+
+# Recreate directory structure
+mkdir -p volumes/db/data
+mkdir -p volumes/storage
+mkdir -p volumes/logs
+mkdir -p volumes/functions
+mkdir -p volumes/api
+log "${GREEN}✓ Fresh volume structure created${NC}"
 
 ################################################################################
 # STEP 2: Clean up broken mounts and files
@@ -124,27 +140,54 @@ DASHBOARD_PASSWORD=$(grep '^DASHBOARD_PASSWORD=' .env | sed 's/^DASHBOARD_PASSWO
 log "JWT_SECRET: ${JWT_SECRET:0:20}... (${#JWT_SECRET} chars)"
 log "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:0:15}..."
 log "DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:0:10}..."
-log "${GREEN}✓ Configuration loaded${NC}"
+
+# Add missing environment variables to .env if they don't exist
+if ! grep -q "^IMGPROXY_ENABLE_WEBP_DETECTION=" .env; then
+    log "${YELLOW}Adding missing IMGPROXY_ENABLE_WEBP_DETECTION to .env...${NC}"
+    echo "IMGPROXY_ENABLE_WEBP_DETECTION=true" >> .env
+fi
+
+log "${GREEN}✓ Configuration loaded and verified${NC}"
 
 ################################################################################
-# STEP 4: Start PostgreSQL ONLY to set passwords
+# STEP 4: Start PostgreSQL ONLY to initialize and set passwords
 ################################################################################
-log_section "Step 4: Starting Database to Set Passwords"
+log_section "Step 4: Starting Fresh Database"
 
 # Start only DB service
 docker compose up -d db
 
-log "Waiting for database to be ready..."
-sleep 15
+log "Waiting for database to initialize (this may take 30-45 seconds for fresh DB)..."
+sleep 10
 
-# Check if DB is running
-if ! docker compose ps db | grep -q "running"; then
-    log "${RED}Database failed to start!${NC}"
-    docker compose logs db | tail -50
+# Wait for database to be healthy with retries
+MAX_RETRIES=30
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    if docker compose ps db | grep -q "running"; then
+        # Check if postgres is actually accepting connections
+        if docker compose exec -T db pg_isready -U postgres > /dev/null 2>&1; then
+            log "${GREEN}✓ Database is running and accepting connections${NC}"
+            break
+        fi
+    fi
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    printf "\r${YELLOW}Waiting for database... %d/%d${NC}" $RETRY_COUNT $MAX_RETRIES
+    sleep 2
+done
+echo ""
+
+# Final check
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    log "${RED}Database failed to start after $MAX_RETRIES attempts!${NC}"
+    log "Checking logs..."
+    docker compose logs db | tail -100
     exit 1
 fi
 
-log "${GREEN}✓ Database is running${NC}"
+# Give it a few more seconds to finish initialization
+sleep 5
+log "${GREEN}✓ Database fully initialized${NC}"
 
 ################################################################################
 # STEP 5: Set passwords for all database users
