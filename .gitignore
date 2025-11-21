@@ -1,0 +1,50 @@
+# Environment and Secrets
+.env
+credentials.txt
+*.key
+*.pem
+
+# SSL Certificates
+ssl/*.crt
+ssl/*.key
+ssl/*.pem
+
+# Database Data
+volumes/db/data/
+*.sql.gz
+
+# Backups
+backups/
+
+# Storage Data
+volumes/storage/*
+!volumes/storage/.gitkeep
+
+# Logs
+*.log
+logs/
+volumes/logs/*.log
+
+# Docker
+.docker/
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Node (if using Edge Functions)
+node_modules/
+volumes/functions/*/node_modules/
