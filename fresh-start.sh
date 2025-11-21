@@ -417,9 +417,12 @@ echo -e "${BLUE}   Step 6/6: Test and Verify${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════════${NC}"
 echo ""
 
+# Disable exit-on-error for testing section (tests can fail without stopping script)
+set +e
+
 # Test REST API
 echo -n "Testing REST API... "
-REST_RESPONSE=$(curl -s -w "\n%{http_code}" -H "apikey: $ANON_KEY" http://localhost/rest/v1/)
+REST_RESPONSE=$(curl -s -w "\n%{http_code}" -H "apikey: $ANON_KEY" http://localhost/rest/v1/ 2>&1)
 REST_CODE=$(echo "$REST_RESPONSE" | tail -1)
 REST_BODY=$(echo "$REST_RESPONSE" | head -n -1)
 
@@ -435,7 +438,7 @@ fi
 
 # Test Auth API
 echo -n "Testing Auth API... "
-AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" -H "apikey: $ANON_KEY" http://localhost/auth/v1/health)
+AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" -H "apikey: $ANON_KEY" http://localhost/auth/v1/health 2>&1)
 AUTH_CODE=$(echo "$AUTH_RESPONSE" | tail -1)
 AUTH_BODY=$(echo "$AUTH_RESPONSE" | head -n -1)
 
@@ -451,7 +454,7 @@ fi
 
 # Test Storage API
 echo -n "Testing Storage API... "
-STORAGE_RESPONSE=$(curl -s -w "\n%{http_code}" -H "apikey: $ANON_KEY" http://localhost/storage/v1/bucket)
+STORAGE_RESPONSE=$(curl -s -w "\n%{http_code}" -H "apikey: $ANON_KEY" http://localhost/storage/v1/bucket 2>&1)
 STORAGE_CODE=$(echo "$STORAGE_RESPONSE" | tail -1)
 STORAGE_BODY=$(echo "$STORAGE_RESPONSE" | head -n -1)
 
@@ -467,7 +470,7 @@ fi
 
 # Test Studio
 echo -n "Testing Studio... "
-STUDIO_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000)
+STUDIO_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>&1)
 if [ "$STUDIO_CODE" = "200" ]; then
     echo -e "${GREEN}✓ HTTP $STUDIO_CODE${NC}"
 else
@@ -483,6 +486,9 @@ if echo "$REST_ENV" | grep -q "PGRST_JWT_SECRET="; then
 else
     echo -e "${RED}✗ REST container missing JWT_SECRET${NC}"
 fi
+
+# Re-enable exit-on-error after all tests
+set -e
 
 echo ""
 echo -e "${CYAN}"
