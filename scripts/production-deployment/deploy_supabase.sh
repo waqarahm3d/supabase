@@ -816,6 +816,18 @@ configure_nginx() {
     # Remove default site
     rm -f /etc/nginx/sites-enabled/default
 
+    # Create webroot for ACME challenges
+    mkdir -p /var/www/certbot
+
+    # Check if SSL certificates already exist
+    if [[ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
+        log_info "SSL certificates found, configuring HTTPS..."
+        local use_ssl=true
+    else
+        log_info "No SSL certificates yet, configuring HTTP only for certificate generation..."
+        local use_ssl=false
+    fi
+
     # Create Nginx configuration
     cat > "$nginx_conf" << EOF
 # Supabase Nginx Configuration
@@ -837,18 +849,26 @@ upstream studio {
     keepalive 32;
 }
 
-# HTTP - Redirect to HTTPS
+# HTTP Server
 server {
     listen 80;
     listen [::]:80;
     server_name ${DOMAIN};
 
+    # ACME challenge location
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
+        allow all;
     }
+EOF
 
+    if [[ "$use_ssl" == "true" ]]; then
+        # Redirect HTTP to HTTPS if SSL is available
+        cat >> "$nginx_conf" << 'EOF'
+
+    # Redirect to HTTPS
     location / {
-        return 301 https://\$server_name\$request_uri;
+        return 301 https://$server_name$request_uri;
     }
 }
 
@@ -858,7 +878,7 @@ server {
     listen [::]:443 ssl http2;
     server_name ${DOMAIN};
 
-    # SSL Configuration (will be updated by Certbot)
+    # SSL Configuration
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
 
@@ -926,6 +946,54 @@ server {
     }
 }
 EOF
+    else
+        # No SSL yet - serve HTTP directly (will be reconfigured after cert issuance)
+        cat >> "$nginx_conf" << 'EOF'
+
+    # Temporary HTTP access (will redirect to HTTPS after certificate is obtained)
+    # Studio UI
+    location /studio {
+        proxy_pass http://studio;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # API endpoints through Kong
+    location / {
+        limit_req zone=api_limit burst=20 nodelay;
+        limit_conn addr 10;
+
+        proxy_pass http://kong;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
+EOF
+    fi
 
     # Enable site
     ln -sf "$nginx_conf" "$nginx_enabled"
@@ -936,6 +1004,7 @@ EOF
         log_success "Nginx configured and restarted"
     else
         log_error "Nginx configuration test failed"
+        nginx -t 2>&1 | tee -a "$LOG_FILE"
         exit 1
     fi
 }
@@ -968,6 +1037,10 @@ setup_tls_certificates() {
 
     if [[ $? -eq 0 ]]; then
         log_success "TLS certificate obtained successfully"
+
+        # Reconfigure Nginx with HTTPS now that we have certificates
+        log_info "Reconfiguring Nginx to enable HTTPS..."
+        configure_nginx
 
         # Set up auto-renewal
         local renewal_script="/etc/cron.daily/certbot-renewal"
