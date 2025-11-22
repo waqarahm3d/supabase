@@ -1026,7 +1026,42 @@ setup_tls_certificates() {
         return 0
     fi
 
+    # DNS validation before attempting certificate
+    log_info "Validating DNS configuration..."
+
+    local server_ip=$(curl -s --connect-timeout 5 ifconfig.me || curl -s --connect-timeout 5 icanhazip.com || echo "")
+    local domain_ip=$(dig +short "$DOMAIN" | head -1 || echo "")
+
+    if [[ -z "$server_ip" ]]; then
+        log_warn "Could not detect server's public IP address"
+    elif [[ -z "$domain_ip" ]]; then
+        log_error "DNS lookup failed for $DOMAIN"
+        log_error "Please configure DNS A record for $DOMAIN to point to: $server_ip"
+        log_warn "Continuing without TLS - you can obtain certificate later"
+        log_warn "To obtain certificate later, run: sudo certbot certonly --webroot -w /var/www/certbot -d $DOMAIN"
+        return 0
+    elif [[ "$server_ip" != "$domain_ip" ]]; then
+        log_error "DNS MISMATCH DETECTED!"
+        log_error "  Server IP:  $server_ip"
+        log_error "  Domain IP:  $domain_ip"
+        log_error ""
+        log_error "Please update DNS A record for $DOMAIN to point to: $server_ip"
+        log_error ""
+        log_warn "Continuing without TLS - fix DNS and run certificate setup later"
+        log_warn "After fixing DNS, run: sudo certbot certonly --webroot -w /var/www/certbot -d $DOMAIN"
+        log_warn "Then reconfigure Nginx with: sudo $PROJECT_DIR/../deploy_supabase.sh --skip-* flags"
+        return 0
+    else
+        log_success "DNS validation passed: $DOMAIN → $server_ip"
+    fi
+
+    # Clean up any stale certbot state
+    if [[ -d "/etc/letsencrypt/renewal-hooks" ]]; then
+        find /etc/letsencrypt -name "*${DOMAIN}*" -type f -mtime +1 -delete 2>/dev/null || true
+    fi
+
     # Obtain certificate
+    log_info "Requesting certificate from Let's Encrypt..."
     certbot certonly --webroot \
         -w /var/www/certbot \
         -d "$DOMAIN" \
