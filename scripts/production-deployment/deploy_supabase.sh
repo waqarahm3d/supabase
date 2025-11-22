@@ -177,7 +177,7 @@ EOF
 # Secure input for passwords
 read_secret() {
     local prompt="$1"
-    local var_name="$2"
+    local var_name="${2:-}"  # Optional second parameter
     local value=""
 
     echo -n "$prompt: " >&2
